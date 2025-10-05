@@ -6,11 +6,64 @@
 !_TAG_PROGRAM_VERSION	5.8	//
 -Implement-Http-Server	README.md	/^# Implement-Http-Server$/;"	h
 BACKLOG	TcpServer.hpp	13;"	d
+BAD_REQUEST	Protocol.hpp	31;"	d
+CallBack	Protocol.hpp	/^class CallBack() {$/;"	f	signature:()
 ERROR	Log.hpp	8;"	d
+EndPoint	Protocol.hpp	/^        EndPoint(int sock)$/;"	f	class:EndPoint	access:public	signature:(int sock)
+EndPoint	Protocol.hpp	/^class EndPoint {$/;"	c
+EndPoint::EndPoint	Protocol.hpp	/^        EndPoint(int sock)$/;"	f	class:EndPoint	access:public	signature:(int sock)
+EndPoint::_http_request	Protocol.hpp	/^        HttpRequest _http_request;$/;"	m	class:EndPoint	access:private
+EndPoint::_http_response	Protocol.hpp	/^        HttpResponse _http_response;$/;"	m	class:EndPoint	access:private
+EndPoint::_sock	Protocol.hpp	/^        int _sock;$/;"	m	class:EndPoint	access:private
+EndPoint::~EndPoint	Protocol.hpp	/^        ~EndPoint()$/;"	f	class:EndPoint	access:public	signature:()
 FATAL	Log.hpp	9;"	d
+HOME_PAGE	Protocol.hpp	22;"	d
+HTTP_VERSION	Protocol.hpp	23;"	d
+HttpRequest	Protocol.hpp	/^class HttpRequest {$/;"	c
+HttpRequest::_blank	Protocol.hpp	/^        std::string _blank;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_cgi	Protocol.hpp	/^        bool _cgi;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_content_length	Protocol.hpp	/^        int _content_length;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_header_kv	Protocol.hpp	/^        std::unordered_map<std::string, std::string> _header_kv;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_method	Protocol.hpp	/^        std::string _method;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_path	Protocol.hpp	/^        std::string _path;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_query_string	Protocol.hpp	/^        std::string _query_string;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_request_body	Protocol.hpp	/^        std::string _request_body;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_request_line	Protocol.hpp	/^        std::string _request_line;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_request_line	Protocol.hpp	/^        std::vector<std::string> _request_line;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_uri	Protocol.hpp	/^        std::string _uri;$/;"	m	class:HttpRequest	access:public
+HttpRequest::_version	Protocol.hpp	/^        std::string _version;$/;"	m	class:HttpRequest	access:public
+HttpRequest::~HttpRequest	Protocol.hpp	/^        ~HttpRequest()$/;"	f	class:HttpRequest	access:public	signature:()
+HttpResponse	Protocol.hpp	/^        HttpResponse() $/;"	f	class:HttpResponse	access:public	signature:()
+HttpResponse	Protocol.hpp	/^class HttpResponse {$/;"	c
+HttpResponse::HttpResponse	Protocol.hpp	/^        HttpResponse() $/;"	f	class:HttpResponse	access:public	signature:()
+HttpResponse::_blank	Protocol.hpp	/^        std::string _blank;$/;"	m	class:HttpResponse	access:public
+HttpResponse::_fd	Protocol.hpp	/^        int _fd;$/;"	m	class:HttpResponse	access:public
+HttpResponse::_reponse_header	Protocol.hpp	/^        std::vector<std::string> _reponse_header;$/;"	m	class:HttpResponse	access:public
+HttpResponse::_response_body	Protocol.hpp	/^        std::string _response_body;$/;"	m	class:HttpResponse	access:public
+HttpResponse::_size	Protocol.hpp	/^        int _size;$/;"	m	class:HttpResponse	access:public
+HttpResponse::_status_code	Protocol.hpp	/^        int _status_code;$/;"	m	class:HttpResponse	access:public
+HttpResponse::_status_line	Protocol.hpp	/^        std::string _status_line;$/;"	m	class:HttpResponse	access:public
+HttpResponse::_suffix	Protocol.hpp	/^        std::string _suffix;$/;"	m	class:HttpResponse	access:public
+HttpResponse::~HttpResponse	Protocol.hpp	/^        ~HttpResponse()$/;"	f	class:HttpResponse	access:public	signature:()
+HttpServer	HttpServer.hpp	/^        HttpServer(int port) $/;"	f	class:HttpServer	access:public	signature:(int port)
+HttpServer	HttpServer.hpp	/^class HttpServer {$/;"	c
+HttpServer::HttpServer	HttpServer.hpp	/^        HttpServer(int port) $/;"	f	class:HttpServer	access:public	signature:(int port)
+HttpServer::Loop	HttpServer.hpp	/^        void Loop() {$/;"	f	class:HttpServer	access:public	signature:()
+HttpServer::_port	HttpServer.hpp	/^        int _port;$/;"	m	class:HttpServer	access:private
+HttpServer::~HttpServer	HttpServer.hpp	/^        ~HttpServer()$/;"	f	class:HttpServer	access:public	signature:()
 INFO	Log.hpp	6;"	d
+INTERNAL_SERVER_ERROR	Protocol.hpp	33;"	d
+LINE_END	Protocol.hpp	24;"	d
 LOG	Log.hpp	11;"	d
 Log	Log.hpp	/^void Log(std::string level, std::string message, std::string file_name, int line) {$/;"	f	signature:(std::string level, std::string message, std::string file_name, int line)
+Loop	HttpServer.hpp	/^        void Loop() {$/;"	f	class:HttpServer	access:public	signature:()
+NOT_FOUND	Protocol.hpp	32;"	d
+OK	Protocol.hpp	30;"	d
+PAGE_400	Protocol.hpp	26;"	d
+PAGE_404	Protocol.hpp	27;"	d
+PAGE_500	Protocol.hpp	28;"	d
+PORT	HttpServer.hpp	10;"	d
+SEP	Protocol.hpp	20;"	d
 TcpServer	TcpServer.hpp	/^        TcpServer(int port) {$/;"	f	class:TcpServer	access:private	signature:(int port)
 TcpServer	TcpServer.hpp	/^class TcpServer {$/;"	c
 TcpServer::TcpServer	TcpServer.hpp	/^        TcpServer(int port) {$/;"	f	class:TcpServer	access:private	signature:(int port)
@@ -18,8 +71,39 @@ TcpServer::TcpServer::_svr	TcpServer.hpp	/^TcpServer* TcpServer::_svr = nullptr;
 TcpServer::_listen_port	TcpServer.hpp	/^        int _listen_port;$/;"	m	class:TcpServer	access:private
 TcpServer::_port	TcpServer.hpp	/^        int _port;$/;"	m	class:TcpServer	access:private
 TcpServer::_svr	TcpServer.hpp	/^        static TcpServer* _svr;$/;"	m	class:TcpServer	access:private
+Usage	main.cc	/^void Usage(std::string proc) {$/;"	f	signature:(std::string proc)
 WARNING	Log.hpp	7;"	d
+WEB_ROOT	Protocol.hpp	21;"	d
+_blank	Protocol.hpp	/^        std::string _blank;$/;"	m	class:HttpRequest	access:public
+_blank	Protocol.hpp	/^        std::string _blank;$/;"	m	class:HttpResponse	access:public
+_cgi	Protocol.hpp	/^        bool _cgi;$/;"	m	class:HttpRequest	access:public
+_content_length	Protocol.hpp	/^        int _content_length;$/;"	m	class:HttpRequest	access:public
+_fd	Protocol.hpp	/^        int _fd;$/;"	m	class:HttpResponse	access:public
+_header_kv	Protocol.hpp	/^        std::unordered_map<std::string, std::string> _header_kv;$/;"	m	class:HttpRequest	access:public
+_http_request	Protocol.hpp	/^        HttpRequest _http_request;$/;"	m	class:EndPoint	access:private
+_http_response	Protocol.hpp	/^        HttpResponse _http_response;$/;"	m	class:EndPoint	access:private
 _listen_port	TcpServer.hpp	/^        int _listen_port;$/;"	m	class:TcpServer	access:private
+_method	Protocol.hpp	/^        std::string _method;$/;"	m	class:HttpRequest	access:public
+_path	Protocol.hpp	/^        std::string _path;$/;"	m	class:HttpRequest	access:public
+_port	HttpServer.hpp	/^        int _port;$/;"	m	class:HttpServer	access:private
 _port	TcpServer.hpp	/^        int _port;$/;"	m	class:TcpServer	access:private
+_query_string	Protocol.hpp	/^        std::string _query_string;$/;"	m	class:HttpRequest	access:public
+_reponse_header	Protocol.hpp	/^        std::vector<std::string> _reponse_header;$/;"	m	class:HttpResponse	access:public
+_request_body	Protocol.hpp	/^        std::string _request_body;$/;"	m	class:HttpRequest	access:public
+_request_line	Protocol.hpp	/^        std::string _request_line;$/;"	m	class:HttpRequest	access:public
+_request_line	Protocol.hpp	/^        std::vector<std::string> _request_line;$/;"	m	class:HttpRequest	access:public
+_response_body	Protocol.hpp	/^        std::string _response_body;$/;"	m	class:HttpResponse	access:public
+_size	Protocol.hpp	/^        int _size;$/;"	m	class:HttpResponse	access:public
+_sock	Protocol.hpp	/^        int _sock;$/;"	m	class:EndPoint	access:private
+_status_code	Protocol.hpp	/^        int _status_code;$/;"	m	class:HttpResponse	access:public
+_status_line	Protocol.hpp	/^        std::string _status_line;$/;"	m	class:HttpResponse	access:public
+_suffix	Protocol.hpp	/^        std::string _suffix;$/;"	m	class:HttpResponse	access:public
 _svr	TcpServer.hpp	/^        static TcpServer* _svr;$/;"	m	class:TcpServer	access:private
 _svr	TcpServer.hpp	/^TcpServer* TcpServer::_svr = nullptr;$/;"	m	class:TcpServer::TcpServer	access:private
+_uri	Protocol.hpp	/^        std::string _uri;$/;"	m	class:HttpRequest	access:public
+_version	Protocol.hpp	/^        std::string _version;$/;"	m	class:HttpRequest	access:public
+main	main.cc	/^int main(int argc, char* argv[]) {$/;"	f	signature:(int argc, char* argv[])
+~EndPoint	Protocol.hpp	/^        ~EndPoint()$/;"	f	class:EndPoint	access:public	signature:()
+~HttpRequest	Protocol.hpp	/^        ~HttpRequest()$/;"	f	class:HttpRequest	access:public	signature:()
+~HttpResponse	Protocol.hpp	/^        ~HttpResponse()$/;"	f	class:HttpResponse	access:public	signature:()
+~HttpServer	HttpServer.hpp	/^        ~HttpServer()$/;"	f	class:HttpServer	access:public	signature:()

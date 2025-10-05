@@ -17,6 +17,10 @@ class HttpServer {
             :_port(port)
         {}
 
+        void InitServer() {
+            signal(SIGPIPE, SIG_IGN);
+        }
+
         void Loop() {
             LOG(INFO, "loop begin");
             TcpServer* tsvr = TcpServer::GetInstance(_port);
