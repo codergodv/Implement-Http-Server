@@ -32,9 +32,11 @@
 #define NOT_FOUND 404
 #define INTERNAL_SERVER_ERROR 500
 
-static std::string CodeToDesc(int code) {
+//根据状态码获取状态码描述
+static std::string CodeToDesc(int code)
+{
     std::string desc;
-    switch (code) {
+    switch(code){
         case 200:
             desc = "OK";
             break;
@@ -53,6 +55,7 @@ static std::string CodeToDesc(int code) {
     return desc;
 }
 
+//根据后缀获取资源类型
 static std::string SuffixToDesc(const std::string& suffix)
 {
     static std::unordered_map<std::string, std::string> suffix_to_desc = {
@@ -69,138 +72,159 @@ static std::string SuffixToDesc(const std::string& suffix)
     return "text/html"; //所给后缀未找到则默认该资源为html文件
 }
 
-class HttpRequest {
+//HTTP请求
+class HttpRequest{
     public:
-        std::string _request_line;
-        std::vector<std::string> _request_header;
-        std::string _blank;
-        std::string _request_body;
+        //HTTP请求内容
+        std::string _request_line;                //请求行
+        std::vector<std::string> _request_header; //请求报头
+        std::string _blank;                       //空行
+        std::string _request_body;                //请求正文
 
-        std::string _method;
-        std::string _uri;
-        std::string _version;
-        std::unordered_map<std::string, std::string> _header_kv;
-        int _content_length;
-        std::string _path;
-        std::string _query_string;
-        
-        bool _cgi;
+        //解析结果
+        std::string _method;       //请求方法
+        std::string _uri;          //URI
+        std::string _version;      //版本号
+        std::unordered_map<std::string, std::string> _header_kv; //请求报头中的键值对
+        int _content_length;       //正文长度
+        std::string _path;         //请求资源的路径
+        std::string _query_string; //uri中携带的参数
 
+        //CGI相关
+        bool _cgi; //是否需要使用CGI模式
     public:
         HttpRequest()
-            :_content_length(0);
-            ,_cgi(false);
+            :_content_length(0) //默认请求正文长度为0
+            ,_cgi(false)        //默认不使用CGI模式
         {}
-
         ~HttpRequest()
         {}
 };
 
-class HttpResponse {
+//HTTP响应
+class HttpResponse{
     public:
-        std::string _status_line;
-        std::vector<std::string> _response_header;
-        std::string _blank;
-        std::string _response_body;
+        //HTTP响应内容
+        std::string _status_line;                  //状态行
+        std::vector<std::string> _response_header; //响应报头
+        std::string _blank;                        //空行
+        std::string _response_body;                //响应正文（CGI相关）
 
-        int _status_code;
-        int _fd;
-        int _size;
-        std::string _suffix;
+        //所需数据
+        int _status_code;    //状态码
+        int _fd;             //响应文件的fd  （非CGI相关）
+        int _size;           //响应文件的大小（非CGI相关）
+        std::string _suffix; //响应文件的后缀（非CGI相关）
     public:
-        HttpResponse() 
-            :_blank(LINE_END)
-             ,_status_code(OK)
-             ,fd(-1)
-             ,_size(0)
+        HttpResponse()
+            :_blank(LINE_END) //设置空行
+            ,_status_code(OK) //状态码默认为200
+            ,_fd(-1)          //响应文件的fd初始化为-1
+            ,_size(0)         //响应文件的大小默认为0
         {}
         ~HttpResponse()
         {}
 };
 
-class EndPoint {
+//读取请求、分析请求、构建响应
+//IO通信
+
+//服务端EndPoint
+class EndPoint{
     private:
-        int _sock;
-        HttpRequest _http_request;
-        HttpResponse _http_response;
-        bool _stop;
+        int _sock;                   //通信的套接字
+        HttpRequest _http_request;   //HTTP请求
+        HttpResponse _http_response; //HTTP响应
+        bool _stop;                  //是否停止本次处理
     private:
-        bool RecvHttpRequestLine() {
+        //读取请求行
+        bool RecvHttpRequestLine()
+        {
             auto& line = _http_request._request_line;
-            if (Util::ReadLine(_sock, line) > 0) {
-                line.resize(line.size() - 1);
+            if(Util::ReadLine(_sock, line) > 0){
+                line.resize(line.size() - 1); //去掉读取上来的\n
             }
-            else {
+            else{ //读取出错，则停止本次处理
                 _stop = true;
             }
             return _stop;
         }
-
-        bool RecvHttpRequestHeader() {
+        //读取请求报头和空行
+        bool RecvHttpRequestHeader()
+        {
             std::string line;
-            while (true) {
-                line.clear();
-                if (Util::ReadLine(sock, line) <= 0) {
+            while(true){
+                line.clear(); //每次读取之前清空line
+                if(Util::ReadLine(_sock, line) <= 0){ //读取出错，则停止本次处理
                     _stop = true;
                     break;
                 }
-                if (line == "\n") {
+                if(line == "\n"){ //读取到了空行
                     _http_request._blank = line;
                     break;
                 }
-
-                line.resize(line.size() - 1);
+                //读取到一行请求报头
+                line.resize(line.size() - 1); //去掉读取上来的\n
                 _http_request._request_header.push_back(line);
             }
-            return stop();
+            return _stop;
         }
-
-        void ParseHttpRequestLine() {
+        //解析请求行
+        void ParseHttpRequestLine()
+        {
             auto& line = _http_request._request_line;
 
+            //通过stringstream拆分请求行
             std::stringstream ss(line);
-            ss >> _http_request._method >> _http_request._uri >> _http_request._version;
+            ss>>_http_request._method>>_http_request._uri>>_http_request._version;
 
+            //将请求方法统一转换为全大写
             auto& method = _http_request._method;
             std::transform(method.begin(), method.end(), method.begin(), toupper);
         }
-
-        void ParseHttpRequestHeader() {
+        //解析请求报头
+        void ParseHttpRequestHeader()
+        {
             std::string key;
             std::string value;
-            for (auto& iter : _http_request._request_header) {
-                if (Util::CutString(iter, key, value, SEP)) {
+            for(auto& iter : _http_request._request_header){
+                //将每行请求报头打散成kv键值对，插入到unordered_map中
+                if(Util::CutString(iter, key, value, SEP)){
                     _http_request._header_kv.insert({key, value});
                 }
             }
         }
-
-        bool IsNeedRecvHttpRequestBody() {
+        //判断是否需要读取请求正文
+        bool IsNeedRecvHttpRequestBody()
+        {
             auto& method = _http_request._method;
-            if (method == "POST") {
+            if(method == "POST"){ //请求方法为POST则需要读取正文
                 auto& header_kv = _http_request._header_kv;
-                auto iter = _header_kv.find("Content-Length");
-                if (iter != header_kv.end()) {
+                //通过Content-Length获取请求正文长度
+                auto iter = header_kv.find("Content-Length");
+                if(iter != header_kv.end()){
                     _http_request._content_length = atoi(iter->second.c_str());
                     return true;
                 }
             }
             return false;
         }
-
-        bool RecvHttpRequestBody() {
-            if (IsNeedRecvHttpRequestBody()) {
-                int Content_length = _http_request._content_length;
+        //读取请求正文
+        bool RecvHttpRequestBody()
+        {
+            if(IsNeedRecvHttpRequestBody()){ //先判断是否需要读取正文
+                int content_length = _http_request._content_length;
                 auto& body = _http_request._request_body;
 
+                //读取请求正文
                 char ch = 0;
-                while(Content_length) {
+                while(content_length){
                     ssize_t size = recv(_sock, &ch, 1, 0);
-                    if (size > 0) {
+                    if(size > 0){
                         body.push_back(ch);
-                        Content_length--;
+                        content_length--;
                     }
-                    else {
+                    else{ //读取出错或对端关闭，则停止本次处理
                         _stop = true;
                         break;
                     }
@@ -208,7 +232,7 @@ class EndPoint {
             }
             return _stop;
         }
-        
+        //CGI处理
         int ProcessCgi()
         {
             int code = OK; //要返回的状态码，默认设置为200
@@ -319,123 +343,136 @@ class EndPoint {
                         code = INTERNAL_SERVER_ERROR;
                     }
                 }
-                
+
                 //关闭两个管道对应的文件描述符
                 close(input[0]);
                 close(output[1]);
             }
             return code; //返回状态码
         }
-        
-      int ProcessCgi() {
-          _http_response._fd = open(_http_request._path.c_str(), O_RDONLY);
-          if (_http_response._fd >= 0) {
-              return OK;
-          }
-          return INTERNAL_SERVER_ERROR; 
-      }
-            
-      void BuildOkResponse() {
-          std::string content_type = "Content-Type: ";
-          content_type += SuffixToDesc(_http_response._suffix);
-          content_type += LINE_END;
-          _http_response._reponse_header.push_back(content_type);
+        //非CGI处理
+        int ProcessNonCgi()
+        {
+            //打开客户端请求的资源文件，以供后续发送
+            _http_response._fd = open(_http_request._path.c_str(), O_RDONLY);
+            if(_http_response._fd >= 0){ //打开文件成功
+                return OK;
+            }
+            return INTERNAL_SERVER_ERROR; //打开文件失败
+        }
 
-          std::string content_length = "Content-Length: ";
-          if (_http_request._cgi) {
-              content_length += std::to_string(_http_response._response_body.size());
-          }
-          else {
-              content_length += std::to_string(_http_response._size);
-          }
-          content_length += LINE_END;
-          _http_response._reponse_header.push_back(content_length);
-      }
+        void BuildOkResponse()
+        {
+            //构建响应报头
+            std::string content_type = "Content-Type: ";
+            content_type += SuffixToDesc(_http_response._suffix);
+            content_type += LINE_END;
+            _http_response._response_header.push_back(content_type);
 
+            std::string content_length = "Content-Length: ";
+            if(_http_request._cgi){ //以CGI方式请求
+                content_length += std::to_string(_http_response._response_body.size());
+            }
+            else{ //以非CGI方式请求
+                content_length += std::to_string(_http_response._size);
+            }
+            content_length += LINE_END;
+            _http_response._response_header.push_back(content_length);
+        }
 
-      void HandlerError(std::string page) {
-          _http_response._fd = open(page.c_str(), O_RDONLY);
-          if (_http_response._fd > 0) {
-              struct stat st;
-              stat(page.c_str(), &st);
+        void HandlerError(std::string page)
+        {
+            _http_request._cgi = false; //需要返回对应的错误页面（非CGI返回）
 
-              std::string content_type = "Content-Type: text/html";
-              content_type += LINE_END;
-              _http_response._response_header.push_back(content_type);
+            //打开对应的错误页面文件，以供后续发送
+            _http_response._fd = open(page.c_str(), O_RDONLY);
+            if(_http_response._fd > 0){ //打开文件成功
+                //构建响应报头
+                struct stat st;
+                stat(page.c_str(), &st); //获取错误页面文件的属性信息
 
-              std::string content_length = "Content-Length: ";
-              content_length += std::to_string(st.st_size);
-              Content_length += LINE_END;
-              _http_response._response_header.push_back(content_length);
+                std::string content_type = "Content-Type: text/html";
+                content_type += LINE_END;
+                _http_response._response_header.push_back(content_type);
 
-              _http_response._size = st.st_size;
-          }
-      }
+                std::string content_length = "Content-Length: ";
+                content_length += std::to_string(st.st_size);
+                content_length += LINE_END;
+                _http_response._response_header.push_back(content_length);
 
+                _http_response._size = st.st_size; //重新设置响应文件的大小
+            }
+        }
     public:
         EndPoint(int sock)
             :_sock(sock)
             ,_stop(false)
         {}
-       
-        bool IsStop() {
+        //本次处理是否停止
+        bool IsStop()
+        {
             return _stop;
         }
-        
-        //拉取请求
-        void RecvHttpRequest() {
-            if (RecvHttpRequestLine() && RecvHttpRequestHeader()) {
+        //读取请求
+        void RecvHttpRequest()
+        {
+            if(!RecvHttpRequestLine()&&!RecvHttpRequestHeader()){ //短路求值
                 ParseHttpRequestLine();
                 ParseHttpRequestHeader();
                 RecvHttpRequestBody();
             }
         }
-
         //处理请求
-        void HandlerHttpRequest() {
+        void HandlerHttpRequest()
+        {
             auto& code = _http_response._status_code;
 
-            if (_http_request._method != "GET" && _http_request._method != "POST") {
+            if(_http_request._method != "GET"&&_http_request._method != "POST"){ //非法请求
                 LOG(WARNING, "method is not right");
-                code = BAD_REQUEST;
+                code = BAD_REQUEST; //设置对应的状态码，并直接返回
                 return;
             }
 
-            if (_http_request._method == "GET") {
+            if(_http_request._method == "GET"){
                 size_t pos = _http_request._uri.find('?');
-                if (pos != std::string::npos) {
+                if(pos != std::string::npos){ //uri中携带参数
+                    //切割uri，得到客户端请求资源的路径和uri中携带的参数
                     Util::CutString(_http_request._uri, _http_request._path, _http_request._query_string, "?");
-                    _http_request._cgi = true;
+                    _http_request._cgi = true; //上传了参数，需要使用CGI模式
                 }
-                else {
-                    _http_request._path = _http_request._uri;
+                else{ //uri中没有携带参数
+                    _http_request._path = _http_request._uri; //uri即是客户端请求资源的路径
                 }
             }
-            else if (_http_request._method == "POST") {
-                _http_request._path  = _http_request._uri;
-                _http_request._cgi = true;
+            else if(_http_request._method == "POST"){
+                _http_request._path = _http_request._uri; //uri即是客户端请求资源的路径
+                _http_request._cgi = true; //上传了参数，需要使用CGI模式
             }
-            else {
-
+            else{
+                //Do Nothing
             }
 
+            //给请求资源路径拼接web根目录
             std::string path = _http_request._path;
             _http_request._path = WEB_ROOT;
             _http_request._path += path;
 
-            if (_http_request._path[_http_request._path.size() - 1] == '/') {
+            //请求资源路径以/结尾，说明请求的是一个目录
+            if(_http_request._path[_http_request._path.size() - 1] == '/'){
+                //拼接上该目录下的index.html
                 _http_request._path += HOME_PAGE;
             }
-
+            
+            //获取请求资源文件的属性信息
             struct stat st;
-            if (stat(_http_request._path.c_str(), &st) == 0) {
-                if (S_ISDIR(st.st_mode)) {
-                    _http_request._path += "/";
-                    _http_request._path += HOME_PAGE;
-                    stat(_http_request._path.c_str(), &st);
+            if(stat(_http_request._path.c_str(), &st) == 0){ //属性信息获取成功，说明该资源存在
+                if(S_ISDIR(st.st_mode)){ //该资源是一个目录
+                    _http_request._path += "/"; //需要拼接/，以/结尾的目录前面已经处理过了
+                    _http_request._path += HOME_PAGE; //拼接上该目录下的index.html
+                    stat(_http_request._path.c_str(), &st); //需要重新资源文件的属性信息
                 }
-                else if (st.st_mode & S_IXUSR || st.st_mode & S_IXGRP || st.st_mode & S_IXOTH) {
-                    _http_request._cgi = true;
+                else if(st.st_mode&S_IXUSR||st.st_mode&S_IXGRP||st.st_mode&S_IXOTH){ //该资源是一个可执行程序
+                    _http_request._cgi = true; //需要使用CGI模式
                 }
                 _http_response._size = st.st_size; //设置请求资源文件的大小
             }
@@ -461,13 +498,12 @@ class EndPoint {
             else{
                 code = ProcessNonCgi(); //简单的网页返回，返回静态网页
             }
-   
         }
-
         //构建响应
-        void BuildHttpResponse() {
+        void BuildHttpResponse()
+        {
             int code = _http_response._status_code;
-
+            //构建状态行
             auto& status_line = _http_response._status_line;
             status_line += HTTP_VERSION;
             status_line += " ";
@@ -475,12 +511,13 @@ class EndPoint {
             status_line += " ";
             status_line += CodeToDesc(code);
             status_line += LINE_END;
-            
+
+            //构建响应报头
             std::string path = WEB_ROOT;
             path += "/";
-            switch (code) {
+            switch(code){
                 case OK:
-                    BulidResponse();
+                    BuildOkResponse();
                     break;
                 case NOT_FOUND:
                     path += PAGE_404;
@@ -496,77 +533,97 @@ class EndPoint {
                     break;
                 default:
                     break;
-            } 
+            }
         }
 
         //发送响应
-        void SendHttpResponse() {
-            if (send(_sock, _http_response._status_line.c_str(), _http_response._status_line.size(), 0) <= 0) {
-                _stop = true;
+        bool SendHttpResponse()
+        {
+            //发送状态行
+            if(send(_sock, _http_response._status_line.c_str(), _http_response._status_line.size(), 0) <= 0){
+                _stop = true; //发送失败，设置_stop
             }
-            if (!_stop) {
-                for (auto& iter : _http_response._response_header) {
-                    if (send(_sock, iter.c_str(), iter.size(), 0) <= 0) {
-                        _stop = true;
+            //发送响应报头
+            if(!_stop){
+                for(auto& iter : _http_response._response_header){
+                    if(send(_sock, iter.c_str(), iter.size(), 0) <= 0){
+                        _stop = true; //发送失败，设置_stop
                         break;
                     }
                 }
             }
-            if (!_stop) {
-                if (send(_sock, _http_response._blank.c_str(), _http_response._blank.size(), 0) <= 0) {
-                    _stop = true;
+            //发送空行
+            if(!_stop){
+                if(send(_sock, _http_response._blank.c_str(), _http_response._blank.size(), 0) <= 0){
+                    _stop = true; //发送失败，设置_stop
                 }
             }
-            if (_http_request._cgi) {
-               if (!_stop) {
+            //发送响应正文
+            if(_http_request._cgi){
+                if(!_stop){
                     auto& response_body = _http_response._response_body;
                     const char* start = response_body.c_str();
                     size_t size = 0;
                     size_t total = 0;
-                    while (total < response_body.size() && (size = send(_sock, start + total, response_body.size() - total, 0)) > 0) {
+                    while(total < response_body.size()&&(size = send(_sock, start + total, response_body.size() - total, 0)) > 0){
                         total += size;
                     }
-               }
+                }
             }
-            else {
-                if (!_stop) {
-                    if (sendfile(_sock, _http_response._fd, nullptr, _http_response._size) <= 0) {
-                        _stop = true;
+            else{
+                if(!_stop){
+                    if(sendfile(_sock, _http_response._fd, nullptr, _http_response._size) <= 0){
+                        _stop = true; //发送失败，设置_stop
                     }
                 }
+                //关闭请求的资源文件
                 close(_http_response._fd);
             }
             return _stop;
         }
-
         ~EndPoint()
         {}
 };
 
-class CallBack() {
+class CallBack{
     public:
-        static void* HandlerRequest(void* arg) {
+        CallBack()
+        {}
+        void operator()(int sock)
+        {
+            HandlerRequest(sock);
+        }
+        void HandlerRequest(int sock)
+        {
             LOG(INFO, "handler request begin");
-            int sock = *(int*) arg;
-            
+
+#ifdef DEBUG
+            char buffer[4096];
+            recv(sock, buffer, sizeof(buffer), 0);
+            std::cout<<"------------------begin------------------"<<std::endl;
+            std::cout<<buffer<<std::endl;
+            std::cout<<"-------------------end-------------------"<<std::endl;
+#else
             EndPoint* ep = new EndPoint(sock);
-            ep->RecvHttpRequest();
-            if (ep->IsStop()) {
+            ep->RecvHttpRequest(); //读取请求
+            if(!ep->IsStop()){
+                LOG(INFO, "Recv No Error, Begin Handler Request");
+                ep->HandlerHttpRequest(); //处理请求
+                ep->BuildHttpResponse();  //构建响应
+                ep->SendHttpResponse();   //发送响应
+                if(ep->IsStop()){
+                    LOG(WARNING, "Send Error, Stop Send Response");
+                }
+            }
+            else{
                 LOG(WARNING, "Recv Error, Stop Handler Request");
             }
-            else {
-                LOG(INFO, "Recv No Error, Begin Handler Request");
-                ep->HandlerHttpRequest();
-                ep->BuildHttpResponse();
-                ep->SendHttpResponse();
-            }
 
-            close(sock);
+            close(sock); //关闭与该客户端建立的套接字
             delete ep;
-
+#endif
             LOG(INFO, "handler request end");
-            return nullptr;
         }
+        ~CallBack()
+        {}
 };
-
-
